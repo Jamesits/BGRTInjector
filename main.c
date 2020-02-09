@@ -34,9 +34,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	}
 
 	// load image file
-	BMP_IMAGE_HEADER* boot_image = &default_bootimage;
+	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER *)&default_bootimage;
 	// TODO: check if image is 24bit or 32bit
-	if (myStrnCmpA("BM", boot_image, 2))
+	if (myStrnCmpA((CHAR8 *)"BM", (CHAR8 *)boot_image, 2))
 	{
 		Print(L"Image file format not recognized");
 		return EFI_UNSUPPORTED;
@@ -60,9 +60,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
 	newBgrtTable->Header.Revision = 1;
 	memcpy2(newBgrtTable->Header.OemId, "YJSNPI", 6);
-	memcpy2(&(newBgrtTable->Header.OemTableId), "YJSNPI  ", 8);
+	memcpy2((CHAR8 *)&(newBgrtTable->Header.OemTableId), "JAMESITS", 8);
 	newBgrtTable->Header.OemRevision = 1919;
-	memcpy2(&(newBgrtTable->Header.CreatorId), "1919", 4);
+	memcpy2((CHAR8*)&(newBgrtTable->Header.CreatorId), "1919", 4);
 	newBgrtTable->Header.CreatorRevision = 1919;
 	newBgrtTable->Version = EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE_REVISION;
 	// Status: set to 0 (INVALID) and Windows loader will draw the image; set to 1(VALID) then Windows loader will retain whatever on the screen not redrawing framebuffer
@@ -72,13 +72,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	newBgrtTable->ImageOffsetX = offsetX;
 	newBgrtTable->ImageOffsetY = offsetY;
 
+
 	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
-	memcpy2(newBmpImage, default_bootimage, boot_image->bfSize);
-	newBgrtTable->ImageAddress = newBmpImage;
+	memcpy2((CHAR8 *)newBmpImage, (CHAR8 *)default_bootimage, boot_image->bfSize);
+	newBgrtTable->ImageAddress = (UINT64)newBmpImage;
 
 	// checksum
-	UINT8 checksum_diff = AcpiChecksum(newBgrtTable, newBgrtTable->Header.Length);
+	UINT8 checksum_diff = AcpiChecksum((CHAR8 *)newBgrtTable, newBgrtTable->Header.Length);
 	newBgrtTable->Header.Checksum -= checksum_diff;
 
 	// TODO: free original image if needed
@@ -152,8 +153,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 			if (!myStrnCmpA((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4))
 			{
 				// blow up the old table and replace with our brand new table
-				memcpy2((CHAR8 *)*EntryPtr, L"FUCK", 4);
-				*EntryPtr = newBgrtTable;
+				memcpy2((CHAR8 *)*EntryPtr, (CHAR8 *)"FUCK", 4);
+				*EntryPtr = (UINT64)newBgrtTable;
 				patchSuccessful = true;
 				Print(L"%NBGRT table has been replaced\n");
 				break;
@@ -173,26 +174,26 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		// create new XSDT
 		XSDT* newXsdt = malloc_acpi(Xsdt->Length + sizeof(UINT64));
-		memcpy2(newXsdt, Xsdt, Xsdt->Length);
+		memcpy2((CHAR8 *)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
 
 		// insert entry
 		newXsdt->Header.Length += sizeof(UINT64);
 		UINT32 EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
-		newXsdt->Entry[EntryCount - 1] = newBgrtTable;
+		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
 		// debug mark
-		memcpy2(newXsdt->Header.CreatorId, "YJSNPI", 6);
+		memcpy2((CHAR8 *)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
 
 		// re-calculate XSDT checksum
-		CHAR8 new_xsdt_checksum_diff = AcpiChecksum(newXsdt, newXsdt->Header.Length);
+		const CHAR8 new_xsdt_checksum_diff = AcpiChecksum((UINT8*)newXsdt, newXsdt->Header.Length);
 		newXsdt->Header.Checksum -= new_xsdt_checksum_diff;
 
 		// replace old XSDT
-		memcpy2(Xsdt, "FUCK", 4);
-		rsdp->XsdtAddress = newXsdt;
+		memcpy2((CHAR8 *)Xsdt, (CHAR8 *)"FUCK", 4);
+		rsdp->XsdtAddress = (UINT64)newXsdt;
 
 		// re-calculate RSDP extended checksum
-		CHAR8 new_rsdt_checksum_diff = AcpiChecksum(rsdp, rsdp->Length);
+		const CHAR8 new_rsdt_checksum_diff = AcpiChecksum((UINT8 *)rsdp, rsdp->Length);
 		rsdp->ExtendedChecksum -= new_rsdt_checksum_diff;
 
 		Print(L"%HNew BGRT table inserted%N\n");
