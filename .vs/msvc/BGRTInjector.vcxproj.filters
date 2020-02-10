@@ -31,9 +31,6 @@
     <ClCompile Include="..\..\chainload.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\file.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\nstdlib.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -64,9 +61,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\chainload.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\file.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\nstdlib.h">

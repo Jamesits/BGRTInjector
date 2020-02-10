@@ -391,7 +391,6 @@
     <ClCompile Include="..\..\bmp.c" />
     <ClCompile Include="..\..\chainload.c" />
     <ClCompile Include="..\..\dirtool.c" />
-    <ClCompile Include="..\..\file.c" />
     <ClCompile Include="..\..\gop.c" />
     <ClCompile Include="..\..\acpi_dump.c" />
     <ClCompile Include="..\..\main.c" />
@@ -406,7 +405,6 @@
     <ClInclude Include="..\..\bmp.h" />
     <ClInclude Include="..\..\chainload.h" />
     <ClInclude Include="..\..\dirtool.h" />
-    <ClInclude Include="..\..\file.h" />
     <ClInclude Include="..\..\gop.h" />
     <ClInclude Include="..\..\acpi_dump.h" />
     <ClInclude Include="..\..\nstdlib.h" />

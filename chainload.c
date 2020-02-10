@@ -9,7 +9,6 @@
 // ImageHandle: the global ImageHandle from main()
 EFI_STATUS Chainload(EFI_HANDLE Device, CHAR16* Path, EFI_HANDLE ImageHandle)
 {
-	EFI_STATUS Status;
 	Print(L"%HChainloading file %s%N\n", Path);
 	EFI_DEVICE_PATH* DevicePath = FileDevicePath(Device, Path);
 

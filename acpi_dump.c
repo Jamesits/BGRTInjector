@@ -27,9 +27,6 @@ ParseRSDP(EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER* Rsdp, CHAR16* GuidStr)
 {
 	EFI_ACPI_SDT_HEADER *Xsdt, *Entry;
 	CHAR16 SigStr[20], OemStr[20];
-	UINT32 EntryCount;
-	UINT64* EntryPtr;
-	int Index;
 
 	Print(L"\n\nACPI GUID: %s\n", GuidStr);
 	Ascii2UnicodeStr((CHAR8*)(Rsdp->OemId), OemStr, 6);
@@ -52,11 +49,11 @@ ParseRSDP(EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER* Rsdp, CHAR16* GuidStr)
 	}
 
 	Ascii2UnicodeStr((CHAR8*)(Xsdt->OemId), OemStr, 6);
-	EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
+	UINT32 EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
 	Print(L"Found XSDT. OEM ID: %s  Entry Count: %d\n\n", OemStr, EntryCount);
 
-	EntryPtr = (UINT64*)(Xsdt + 1);
-	for (Index = 0; Index < EntryCount; Index++, EntryPtr++)
+	UINT64* EntryPtr = (UINT64*)(Xsdt + 1);
+	for (UINT32 Index = 0; Index < EntryCount; Index++, EntryPtr++)
 	{
 		Entry = (EFI_ACPI_SDT_HEADER*)((UINTN)(*EntryPtr));
 		Ascii2UnicodeStr((CHAR8*)(Entry->Signature), SigStr, 4);

@@ -15,7 +15,7 @@ bool bmp_sanity_check(CHAR8 *buf, UINTN FileSize)
 	}
 
 	// check incorrect BMP header size to prevent buffer overflow to some extent
-	BMP_IMAGE_HEADER* bmp = buf;
+	BMP_IMAGE_HEADER* bmp = (BMP_IMAGE_HEADER*)buf;
 	if (FileSize != 0 && FileSize != bmp->bfSize)
 	{
 		Print(L"%HImage file size incorrect%N\n");

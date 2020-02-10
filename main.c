@@ -16,8 +16,8 @@
 
 // the default image compiled into the program
 // if user-provided image is not found anywhere, use this
-const CHAR8 default_bootimage[] = {
-#include "default_bootimage.bmp.inc"
+const CHAR8 default_boot_image[] = {
+#include "default_boot_image.bmp.inc"
 };
 
 EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
@@ -105,10 +105,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	// load image file
 	bool isDefaultBootImageUsed = false;
-	BMP_IMAGE_HEADER* boot_image = load_user_boot_image(USER_BOOT_IMAGE_PATH, ImageHandle);
+	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER*)load_user_boot_image(USER_BOOT_IMAGE_PATH, ImageHandle);
 	if (boot_image == NULL) {
-		boot_image = (BMP_IMAGE_HEADER*)&default_bootimage;
-		if (!bmp_sanity_check(boot_image, 0))
+		boot_image = (BMP_IMAGE_HEADER*)&default_boot_image;
+		if (!bmp_sanity_check((CHAR8*)boot_image, 0))
 		{
 			Print(L"%EDefault boot image is corrupted, please re-download BGRTInjector!%N\n");
 			return EFI_UNSUPPORTED;
@@ -370,10 +370,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		dirtool_drive_iterator_end(&DirToolState, iterator);
 		iterator = NULL;
 	}
-#endif
 
 	dirtool_deinit(&DirToolState);
-
+#endif
 	return ret;
 }
 
