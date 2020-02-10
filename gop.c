@@ -1,6 +1,7 @@
 ﻿// https://blog.fpmurphy.com/2015/05/check-available-text-and-graphics-modes-from-uefi-shell.html
 #include "gop.h"
 
+// get display resolution
 EFI_GRAPHICS_OUTPUT_PROTOCOL*
 GetGOP()
 {

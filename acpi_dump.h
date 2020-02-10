@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// https://blog.fpmurphy.com/2015/01/list-acpi-tables-from-uefi-shell.html
+
+#pragma once
 #ifndef __LISTACPI_H__
 #define __LISTACPI_H__
 

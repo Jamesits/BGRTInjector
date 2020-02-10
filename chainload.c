@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "gop.h"
 
-// load a UEFI executable and execute it if you know the drive and the absolute path
+// load a UEFI executable and execute it if you know the volume (device) and the absolute path
 // Device: a drive handle (get from DIRTOOL_DRIVE->Handle)
 // Path: L"path\to\your\program.efi"
 // ImageHandle: the global ImageHandle from main()

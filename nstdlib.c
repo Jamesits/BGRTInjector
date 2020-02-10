@@ -1,6 +1,8 @@
-﻿#include "nstdlib.h"
+﻿// a collection of useful utilities
+#include "nstdlib.h"
 
 // from https://stackoverflow.com/a/51575086
+// allocate some memory (reclaimable after program quit)
 void* malloc(UINTN poolSize)
 {
 	void* handle;
@@ -22,6 +24,8 @@ void* malloc(UINTN poolSize)
 	}
 }
 
+// allocate some memory as ACPI reclaim memory
+// These will not be reused by Windows and should be retained after OS boot
 void* malloc_acpi(UINTN poolSize)
 {
 	void* handle;
@@ -44,6 +48,7 @@ void* malloc_acpi(UINTN poolSize)
 }
 
 // from https://stackoverflow.com/a/51575086
+// free the memory allocated by malloc()
 void free(void* pool)
 {
 	EFI_STATUS status = uefi_call_wrapper(BS->FreePool, 1, pool);
@@ -62,6 +67,7 @@ void memcpy8(CHAR8* dst, CHAR8* src, UINTN size)
 	}
 }
 
+// for wide char* (L"")
 void memcpy16(CHAR16* dst, CHAR16* src, UINTN size)
 {
 	for (UINTN i = 0; i < size; ++i)
@@ -77,6 +83,8 @@ UINTN strlen8(CHAR8* str)
 	return ret;
 }
 
+
+// for wide char* (L"")
 UINTN strlen16(CHAR16* str)
 {
 	int ret = 0;
@@ -100,12 +108,15 @@ UINTN strncmp8(CHAR8* s1, CHAR8* s2, UINTN len)
 	return len ? *s1 - *s2 : 0;
 }
 
+// clear input buffer to prevent previously unprocessed user input doing unexpected things
 void ClearInputBuf()
 {
 	// empty the console input buffer
 	gST->ConIn->Reset(gST->ConIn, FALSE);
 }
 
+// press any key to continue...
+// (Note: do not press Enter, it will do unexpected things in edge cases)
 void pause()
 {
 	ClearInputBuf();

@@ -6,9 +6,6 @@
 #include <efilib.h>
 #include "acpi_dump.h"
 
-EFI_STATUS
-PrintGOP(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop);
-
 EFI_GRAPHICS_OUTPUT_PROTOCOL*
 GetGOP();
 

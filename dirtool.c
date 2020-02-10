@@ -1,4 +1,6 @@
-﻿// https://github.com/tqh/efi-example/blob/master/disk_example.c
+﻿// utility functions to make file reading and searching easier
+// references:
+// https://github.com/tqh/efi-example/blob/master/disk_example.c
 // https://edk2-devel.narkive.com/WhxSiG6I/directory-file-system-traversal-example
 
 #include "dirtool.h"
@@ -243,6 +245,7 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 }
 
 // also cd, but with string path
+// dirtool_cd_multi(pwd, L"EFI\\Boot\\bootx64.efi")
 DIRTOOL_FILE* dirtool_cd_multi(DIRTOOL_FILE* pwd, CHAR16* Path)
 {
 	const CHAR16 split = '\\';
@@ -345,7 +348,7 @@ EFI_STATUS dirtool_deinit(DIRTOOL_STATE* state)
 	return EFI_SUCCESS;
 }
 
-// read a file into buffer; caller should free() after use
+// read a file into buffer; assume caller call free()
 CHAR8 *dirtool_read_file(DIRTOOL_FILE *file)
 {
 	if (!file)
