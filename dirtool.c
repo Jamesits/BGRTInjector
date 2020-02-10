@@ -54,6 +54,7 @@ EFI_STATUS dirtool_init(DIRTOOL_STATE* state, EFI_HANDLE ImageHandle)
 	return EFI_SUCCESS;
 }
 
+// call to create a drive iterator
 DIRTOOL_DRIVE_ITERATOR *dirtool_drive_iterator_start(DIRTOOL_STATE* state)
 {
 	if (!state->initialized) return NULL;
@@ -63,6 +64,28 @@ DIRTOOL_DRIVE_ITERATOR *dirtool_drive_iterator_start(DIRTOOL_STATE* state)
 	return ret;
 }
 
+// get next drive
+// usage:
+/*
+	DIRTOOL_STATE DirToolState;
+	DirToolState.initialized = 0;
+	EFI_STATUS status = dirtool_init(&DirToolState, ImageHandle);
+	if (EFI_ERROR(status)) {
+		return status;
+	}
+
+	DIRTOOL_DRIVE_ITERATOR* iterator = dirtool_drive_iterator_start(&DirToolState);
+	while ((DIRTOOL_DRIVE *drive = dirtool_drive_iterator_next(&DirToolState, iterator)) != NULL)
+	{
+		Print(L"Opening drive 0x%x\n", &drive);
+		DIRTOOL_FILE* pwd = dirtool_open_drive(&DirToolState, drive);
+		if (pwd == NULL) continue;
+		pwd = dirtool_cd_multi(pwd, L"Path\\to\\your\\file");
+		if (pwd) { do_something(); }
+		dirtool_close_drive(&DirToolState, drive);
+	}
+	dirtool_drive_iterator_end(&DirToolState, iterator);
+*/
 DIRTOOL_DRIVE *dirtool_drive_iterator_next(DIRTOOL_STATE* state, DIRTOOL_DRIVE_ITERATOR *iterator)
 {
 	if (!state->initialized) return NULL;
@@ -72,13 +95,14 @@ DIRTOOL_DRIVE *dirtool_drive_iterator_next(DIRTOOL_STATE* state, DIRTOOL_DRIVE_I
 	return ret;
 }
 
+// call to dispose a drive iterator
 EFI_STATUS dirtool_drive_iterator_end(DIRTOOL_STATE* state, DIRTOOL_DRIVE_ITERATOR* iterator)
 {
 	free(iterator);
 	return EFI_SUCCESS;
 }
 
-// get the drive this executable is on
+// get the drive current executable is on
 // if ImageHandle == NULL then use global ImageHandle
 DIRTOOL_DRIVE *dirtool_get_current_drive(DIRTOOL_STATE* state, EFI_HANDLE ImageHandle)
 {
@@ -149,6 +173,7 @@ DIRTOOL_FILE *dirtool_open_drive(DIRTOOL_STATE* state, DIRTOOL_DRIVE *drive)
 	return &(drive->RootFile);
 }
 
+// cd to next directory level or get a file in current directory
 DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 {
 	if (pwd == NULL || NewFileName == NULL) {
@@ -217,6 +242,7 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 	return NewFile;
 }
 
+// also cd, but with string path
 DIRTOOL_FILE* dirtool_cd_multi(DIRTOOL_FILE* pwd, CHAR16* Path)
 {
 	const CHAR16 split = '\\';
@@ -250,6 +276,7 @@ DIRTOOL_FILE* dirtool_cd_multi(DIRTOOL_FILE* pwd, CHAR16* Path)
 	return ret;
 }
 
+// dispose a DIRTOOL_FILE (and all of its ChildFiles)
 EFI_STATUS __dirtool_release_file(DIRTOOL_FILE* file)
 {
 	// Print(L"__dirtool_release_file() Path=%s\n", file->Path);
@@ -266,6 +293,7 @@ EFI_STATUS __dirtool_release_file(DIRTOOL_FILE* file)
 	return EFI_SUCCESS;
 }
 
+// cd .. (and dispose all its ChildFiles)
 DIRTOOL_FILE* dirtool_go_up(DIRTOOL_FILE* pwd)
 {
 	if (pwd->ParentFolder == NULL) return pwd; // we are at root and it cannot be released
@@ -274,7 +302,7 @@ DIRTOOL_FILE* dirtool_go_up(DIRTOOL_FILE* pwd)
 	return parent;
 }
 
-// close a drive, release directory tree
+// close a drive, release the whole directory tree
 void dirtool_close_drive(DIRTOOL_STATE* state, DIRTOOL_DRIVE* drive)
 {
 	// first release all files made by cd
@@ -296,8 +324,11 @@ void dirtool_close_drive(DIRTOOL_STATE* state, DIRTOOL_DRIVE* drive)
 	drive->isOpened = false;
 }
 
+// dispose a DIRTOOL_STATE
 EFI_STATUS dirtool_deinit(DIRTOOL_STATE* state)
 {
+	if (!state->initialized) return EFI_UNSUPPORTED;
+
 	// release drives
 	for (UINTN i = 0; i < state->DriveCount; ++i)
 	{
@@ -314,6 +345,7 @@ EFI_STATUS dirtool_deinit(DIRTOOL_STATE* state)
 	return EFI_SUCCESS;
 }
 
+// read a file into buffer; caller should free() after use
 CHAR8 *dirtool_read_file(DIRTOOL_FILE *file)
 {
 	if (!file)

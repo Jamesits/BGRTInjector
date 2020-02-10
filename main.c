@@ -13,6 +13,8 @@
 
 #define LOAD_WINDOWS
 
+// the default image compiled into the program
+// if user-provided image is not found anywhere, use this
 const char default_bootimage[] = {
 #include "default_bootimage.bmp.inc"
 };
@@ -30,6 +32,8 @@ EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
 	return ret;
 #endif
 }
+
+
 
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
@@ -265,7 +269,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 #if defined(LOAD_WINDOWS)
 	// directly load Windows
 	Print(L"%HSearching Microsoft bootloader...\n");
-	CHAR16 PATH1[] = L"EFI\\Microsoft\\boot\\bootmgfw.efi";
+	CHAR16 MSBootloaderPath1[] = L"EFI\\Microsoft\\boot\\bootmgfw.efi";
 	DIRTOOL_STATE DirToolState;
 	DirToolState.initialized = 0;
 	Print(L"dirtool_init\n");
@@ -278,11 +282,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	DIRTOOL_DRIVE* drive;
 	drive = dirtool_get_current_drive(&DirToolState, 0);
 	dirtool_open_drive(&DirToolState, drive);
-	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), PATH1);
-	if (pwd)
-	{
-		load_efi_image(pwd, ImageHandle);
-	}
+	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), MSBootloaderPath1);
+	if (pwd)load_efi_image(pwd, ImageHandle);
 	dirtool_close_drive(&DirToolState, drive);
 
 	if (!pwd) {
@@ -296,14 +297,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		DIRTOOL_DRIVE_ITERATOR* iterator = dirtool_drive_iterator_start(&DirToolState);
 		while ((drive = dirtool_drive_iterator_next(&DirToolState, iterator)) != NULL)
 		{
-			Print(L"Opening drive 0x%x\n", &drive);
 			DIRTOOL_FILE* pwd = dirtool_open_drive(&DirToolState, drive);
 			if (pwd == NULL) continue;
-			pwd = dirtool_cd_multi(pwd, PATH1);
-			if (pwd)
-			{
-				load_efi_image(pwd, ImageHandle);
-			}
+			pwd = dirtool_cd_multi(pwd, MSBootloaderPath1);
+			if (pwd) load_efi_image(pwd, ImageHandle);
 #if defined(_DEBUG)
 			Print(L"before dirtool_close_drive()\n");
 			pause();
@@ -315,6 +312,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 #endif
 
+	dirtool_deinit(&DirToolState);
 
 	return ret;
 }
