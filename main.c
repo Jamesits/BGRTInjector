@@ -11,15 +11,21 @@
 #include "chainload.h"
 #include "dirtool.h"
 
+// if LOAD_WINDOWS is defined, it works under Windows loader mode, i.e. chainload Windows bootloader
+// if not defined, it will quit after done everything, thus can be load as an EFI driver
 #define LOAD_WINDOWS
+
+// the path relative to ESP partition root to search for customized boot image, can have "\\" in it
 #define USER_BOOT_IMAGE_PATH L"boot_image.bmp"
 
 // the default image compiled into the program
-// if user-provided image is not found anywhere, use this
+// if user-provided image is not found, use this
 const CHAR8 default_boot_image[] = {
 #include "default_boot_image.bmp.inc"
 };
 
+// loads an efi executable if not a DEBUG build;
+// otherwise try to read the file and verify if it is an efi executable, then quit
 EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
 {
 #if defined(_DEBUG)
@@ -43,13 +49,11 @@ CHAR8 *load_user_boot_image(CHAR16 *boot_image_path, EFI_HANDLE ImageHandle)
 	CHAR8* buf = NULL;
 	DIRTOOL_STATE DirToolState;
 	DirToolState.initialized = 0;
-	// Print(L"dirtool_init\n");
 	EFI_STATUS status = dirtool_init(&DirToolState, ImageHandle);
 	if (EFI_ERROR(status)) {
 		return NULL;
 	}
 
-	// first try current disk
 	DIRTOOL_DRIVE* drive;
 	drive = dirtool_get_current_drive(&DirToolState, 0);
 	dirtool_open_drive(&DirToolState, drive);
@@ -126,7 +130,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(
 		sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
 
-	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char so we are inverted
+	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char hence inverted
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
 	newBgrtTable->Header.Revision = 1;
 	memcpy8(newBgrtTable->Header.OemId, (CHAR8*)"YJSNPI", 6);
