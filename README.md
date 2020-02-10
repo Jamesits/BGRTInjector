@@ -16,6 +16,11 @@ Put a release build of BGRTInjector.efi into `ESP:\EFI\refind\drivers_%ARCH%` an
 
 ## Building
 
+Flags:
+
+* `_DEBUG`: debug output and more pauses to see the log on the screen
+* `LOAD_WINDOWS`: Automatically search for `EFI\Microsoft\Boot\bootmgfw.efi` and start it after BGRT table has been injected
+
 ### Windows
 
 Requirements:
