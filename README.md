@@ -2,6 +2,8 @@
 
 Changes the boot screen image on a UEFI computer.
 
+This is written as a remake of [Ben Wang](https://github.com/imbushuo)'s [`windows_custom_loader.efi`](https://archive.org/details/windows_custom_loader_by_ben_wang), the source code of which is long lost. Several incompatiblities with different UEFI firmwares are addressed, and you can now replace the logo without recompiling the whole program.
+
 ## Requirements
 
 * UEFI firmware (some old EFI firmwares might be supported as well)
