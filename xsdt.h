@@ -9,9 +9,10 @@
 
 #pragma pack(1)
 
-typedef struct {
-    EFI_ACPI_DESCRIPTION_HEADER Header;
-    UINT64 Entry[0];
+typedef struct
+{
+	EFI_ACPI_DESCRIPTION_HEADER Header;
+	UINT64 Entry[0];
 } XSDT;
 
 #pragma pack()

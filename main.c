@@ -9,13 +9,17 @@
 #include "bmp.h"
 #include "memory_management.h"
 #include "xsdt.h"
+#include "chainload.h"
+#include "file.h"
+
+#define LOAD_WINDOWS
 
 const char default_bootimage[] = {
 #include "default_bootimage.bmp.inc"
 };
 
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 {
 #if defined(_GNU_EFI)
 	InitializeLib(ImageHandle, SystemTable);
@@ -24,6 +28,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	Print(L"\n%HBGRTInjector%N\n");
 	Print(L"%Hhttps://github.com/Jamesits/BGRTInjector%N\n");
 	Print(L"Firmware %s Rev %d\n\n", SystemTable->FirmwareVendor, SystemTable->FirmwareRevision);
+
+	// debug area
+	PrintDevices(ImageHandle, SystemTable);
+	pause(SystemTable);
 
 	// get screen size
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = GetGOP();
@@ -46,23 +54,24 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINT32 offsetX = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
 	UINT32 offsetY = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
 
-	Print(L"Screen size: %u*%u, Image size: %d*%d (%u bytes), Top left point: %u*%u\n", 
-		gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution,
-		boot_image->biWidth, boot_image->biHeight, boot_image->bfSize,
-		offsetX, offsetY
+	Print(L"Screen size: %u*%u, Image size: %d*%d (%u bytes), Top left point: %u*%u\n",
+	      gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution,
+	      boot_image->biWidth, boot_image->biHeight, boot_image->bfSize,
+	      offsetX, offsetY
 	);
 
 	// craft a new BGRT table
 	// TODO: check if malloc() succeeds
-	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
-	
+	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(
+		sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
+
 	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char so we are inverted
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
 	newBgrtTable->Header.Revision = 1;
-	memcpy2(newBgrtTable->Header.OemId, "YJSNPI", 6);
-	memcpy2((CHAR8 *)&(newBgrtTable->Header.OemTableId), "JAMESITS", 8);
+	memcpy2(newBgrtTable->Header.OemId, (CHAR8*)"YJSNPI", 6);
+	memcpy2((CHAR8*)&(newBgrtTable->Header.OemTableId), (CHAR8*)"JAMESITS", 8);
 	newBgrtTable->Header.OemRevision = 1919;
-	memcpy2((CHAR8*)&(newBgrtTable->Header.CreatorId), "1919", 4);
+	memcpy2((CHAR8*)&(newBgrtTable->Header.CreatorId), (CHAR8*)"1919", 4);
 	newBgrtTable->Header.CreatorRevision = 1919;
 	newBgrtTable->Version = EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE_REVISION;
 	// Status: set to 0 (INVALID) and Windows loader will draw the image; set to 1(VALID) then Windows loader will retain whatever on the screen not redrawing framebuffer
@@ -75,11 +84,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
-	memcpy2((CHAR8 *)newBmpImage, (CHAR8 *)default_bootimage, boot_image->bfSize);
+	memcpy2((CHAR8*)newBmpImage, (CHAR8*)default_bootimage, boot_image->bfSize);
 	newBgrtTable->ImageAddress = (UINT64)newBmpImage;
 
 	// checksum
-	UINT8 checksum_diff = AcpiChecksum((CHAR8 *)newBgrtTable, newBgrtTable->Header.Length);
+	UINT8 checksum_diff = AcpiChecksum((CHAR8*)newBgrtTable, newBgrtTable->Header.Length);
 	newBgrtTable->Header.Checksum -= checksum_diff;
 
 	// TODO: free original image if needed
@@ -96,19 +105,23 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	UINT64 ret = EFI_SUCCESS;
 
 	// locate RSDP (Root System Description Pointer) 
-	for (int SystemTableIndex = 0; SystemTableIndex < SystemTable->NumberOfTableEntries; SystemTableIndex++) {
+	for (int SystemTableIndex = 0; SystemTableIndex < SystemTable->NumberOfTableEntries; SystemTableIndex++)
+	{
 		Print(L"Table #%d/%d: ", SystemTableIndex + 1, SystemTable->NumberOfTableEntries);
 
-		if (!CompareGuid(&SystemTable->ConfigurationTable[SystemTableIndex].VendorGuid, &AcpiTableGuid) && !CompareGuid(&SystemTable->ConfigurationTable[SystemTableIndex].VendorGuid, &Acpi2TableGuid)) {
+		if (!CompareGuid(&SystemTable->ConfigurationTable[SystemTableIndex].VendorGuid, &AcpiTableGuid) && !CompareGuid(
+			&SystemTable->ConfigurationTable[SystemTableIndex].VendorGuid, &Acpi2TableGuid))
+		{
 			Print(L"Not ACPI\n");
 			goto next_table;
 		}
 
-		if (myStrnCmpA((unsigned char*)"RSD PTR ", (CHAR8*)ect->VendorTable, 8)) {
+		if (myStrnCmpA((unsigned char*)"RSD PTR ", (CHAR8*)ect->VendorTable, 8))
+		{
 			Print(L"Not RSDP\n");
 			goto next_table;
-		} 
-		
+		}
+
 		rsdp = (EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER*)ect->VendorTable;
 		Print(L"RSDP Rev %u @0x%x | ", rsdp->Revision, rsdp);
 
@@ -118,7 +131,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		//ParseRSDP(rsdp, GuidStr); // dump tables
 
 		// check if we have XSDT
-		if (rsdp->Revision < EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION) {
+		if (rsdp->Revision < EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION)
+		{
 			Print(L"No XSDT\n");
 			rsdp = NULL;
 			goto next_table;
@@ -126,7 +140,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		// validate XSDT signature
 		Xsdt = (EFI_ACPI_SDT_HEADER*)(rsdp->XsdtAddress);
-		if (myStrnCmpA("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4)) {
+		if (myStrnCmpA("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
+		{
 			Print(L"Invalid XSDT\n");
 			Xsdt = NULL;
 			goto next_table;
@@ -142,18 +157,20 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		UINT64* EntryPtr;
 		CHAR16 SigStr[20];
 		EntryPtr = (UINT64*)(Xsdt + 1);
-		for (UINT32 XsdtTableIndex = 0; XsdtTableIndex < EntryCount; XsdtTableIndex++, EntryPtr++) {
+		for (UINT32 XsdtTableIndex = 0; XsdtTableIndex < EntryCount; XsdtTableIndex++, EntryPtr++)
+		{
 			EFI_ACPI_SDT_HEADER* Entry = (EFI_ACPI_SDT_HEADER*)((UINTN)(*EntryPtr));
 			Ascii2UnicodeStr((CHAR8*)(Entry->Signature), SigStr, 4);
 			Ascii2UnicodeStr((CHAR8*)(Entry->OemId), OemStr, 6);
-			Print(L"  ACPI table #%d/%d: %s Rev %d OEM ID: %s\n", XsdtTableIndex + 1, EntryCount, SigStr, (int)(Entry->Revision), OemStr);
+			Print(L"  ACPI table #%d/%d: %s Rev %d OEM ID: %s\n", XsdtTableIndex + 1, EntryCount, SigStr,
+			      (int)(Entry->Revision), OemStr);
 
 			// See Advanced Configuration and Power Interface Specification Version 6.2
 			// Table 5-104 Boot Graphics Resource Table Fields
 			if (!myStrnCmpA((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4))
 			{
 				// blow up the old table and replace with our brand new table
-				memcpy2((CHAR8 *)*EntryPtr, (CHAR8 *)"FUCK", 4);
+				memcpy2((CHAR8*)*EntryPtr, (CHAR8*)"FUCK", 4);
 				*EntryPtr = (UINT64)newBgrtTable;
 				patchSuccessful = true;
 				Print(L"%NBGRT table has been replaced\n");
@@ -164,7 +181,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		// break if we found the XSDT but there is no BGRT
 		break;
 
-		next_table:
+	next_table:
 		ect++;
 	}
 
@@ -174,7 +191,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 
 		// create new XSDT
 		XSDT* newXsdt = malloc_acpi(Xsdt->Length + sizeof(UINT64));
-		memcpy2((CHAR8 *)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
+		memcpy2((CHAR8*)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
 
 		// insert entry
 		newXsdt->Header.Length += sizeof(UINT64);
@@ -182,22 +199,24 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
 		// debug mark
-		memcpy2((CHAR8 *)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
+		memcpy2((CHAR8*)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
 
 		// re-calculate XSDT checksum
 		const CHAR8 new_xsdt_checksum_diff = AcpiChecksum((UINT8*)newXsdt, newXsdt->Header.Length);
 		newXsdt->Header.Checksum -= new_xsdt_checksum_diff;
 
 		// replace old XSDT
-		memcpy2((CHAR8 *)Xsdt, (CHAR8 *)"FUCK", 4);
+		memcpy2((CHAR8*)Xsdt, (CHAR8*)"FUCK", 4);
 		rsdp->XsdtAddress = (UINT64)newXsdt;
 
 		// re-calculate RSDP extended checksum
-		const CHAR8 new_rsdt_checksum_diff = AcpiChecksum((UINT8 *)rsdp, rsdp->Length);
+		const CHAR8 new_rsdt_checksum_diff = AcpiChecksum((UINT8*)rsdp, rsdp->Length);
 		rsdp->ExtendedChecksum -= new_rsdt_checksum_diff;
 
 		Print(L"%HNew BGRT table inserted%N\n");
-	} else if (rsdp == NULL) {
+	}
+	else if (rsdp == NULL)
+	{
 		Print(L"%EERROR: RSDP is not found%N\n");
 		ret = EFI_UNSUPPORTED;
 	}
@@ -205,7 +224,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	{
 		Print(L"%EERROR: XSDT is not found%N\n");
 		ret = EFI_UNSUPPORTED;
-	} else if (patchSuccessful)
+	}
+	else if (patchSuccessful)
 	{
 		// do nothing
 	}
@@ -223,11 +243,15 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 	pause(SystemTable);
 
 	// If running in debug mode, use the EFI shut down call to close QEMU
-	Print(L"%EResetting system%N\n\n");
-	SystemTable->RuntimeServices->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);
+	/*Print(L"%EResetting system%N\n\n");
+	SystemTable->RuntimeServices->ResetSystem(EfiResetShutdown, EFI_SUCCESS, 0, NULL);*/
 #else
 	// if we are running as an EFI driver, then just quit and let other things load
 	Print(L"%EBGRTInjector done%N\n\n");
+#endif
+
+#if defined(LOAD_WINDOWS)
+	// directly load Windows
 #endif
 
 	return ret;
