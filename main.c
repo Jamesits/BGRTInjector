@@ -90,16 +90,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	Print(L"%Hhttps://github.com/Jamesits/BGRTInjector%N\n");
 	Print(L"Firmware %s Rev %d\n\n", SystemTable->FirmwareVendor, SystemTable->FirmwareRevision);
 
-	// debug area
-	// PrintDevices(ImageHandle, SystemTable);
-	// ProcessFilesInDir(GetCurrentDisk(ImageHandle, gST), FileDevicePath(GetCurrentDisk(ImageHandle, gST), "\\"), PerFileFuncExample);
-	// pause();
-
 	// get screen size
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = GetGOP();
 	if (!gop)
 	{
-		Print(L"%HUnable to get GOP screen size");
+		Print(L"%EUnable to get GOP screen size%N\n");
 		return EFI_UNSUPPORTED;
 	}
 
@@ -116,14 +111,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		isDefaultBootImageUsed = true;
 	}
 
-	
-	if (strncmp8((CHAR8 *)"BM", (CHAR8 *)boot_image, 2))
-	{
-		Print(L"Image file format not recognized");
-		return EFI_UNSUPPORTED;
-	}
-
-	// calculate offset
+	// calculate offset for centering the image
 	UINT32 offsetX = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
 	UINT32 offsetY = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
 
@@ -147,8 +135,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	memcpy8((CHAR8*)&(newBgrtTable->Header.CreatorId), (CHAR8*)"1919", 4);
 	newBgrtTable->Header.CreatorRevision = 1919;
 	newBgrtTable->Version = EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE_REVISION;
-	// Status: set to 0 (INVALID) and Windows loader will draw the image; set to 1(VALID) then Windows loader will retain whatever on the screen not redrawing framebuffer
-	// set bit[1:2] to 1, 2, 3 for rotation 90, 180, 270 degrees
+	// Status: 
+	// bit[0] is "if the image is currently drawn on the screen buffer".
+	// 		set to 0 (INVALID) and Windows loader will draw the image itself
+	// 		set to 1 (VALID) then Windows loader will retain whatever on the screen not redrawing framebuffer
+	// bit[1:2] is rotation direction. Set to 1, 2, 3 for 90, 180, 270 degrees.
 	newBgrtTable->Status = EFI_ACPI_5_0_BGRT_STATUS_INVALID;
 	newBgrtTable->ImageType = EFI_ACPI_5_0_BGRT_IMAGE_TYPE_BMP;
 	newBgrtTable->ImageOffsetX = offsetX;
@@ -158,7 +149,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
 	memcpy8((CHAR8*)newBmpImage, (CHAR8*)boot_image, boot_image->bfSize);
-	if (!isDefaultBootImageUsed)
+	if (!isDefaultBootImageUsed) // image file loaded, we need to free it
 	{
 		free(boot_image);
 		boot_image = NULL;
@@ -168,10 +159,6 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	// checksum
 	UINT8 checksum_diff = AcpiChecksum((CHAR8*)newBgrtTable, newBgrtTable->Header.Length);
 	newBgrtTable->Header.Checksum -= checksum_diff;
-
-	// TODO: free original image if needed
-
-	// pause(SystemTable);
 
 	EFI_CONFIGURATION_TABLE* ect = SystemTable->ConfigurationTable;
 	EFI_GUID AcpiTableGuid = ACPI_TABLE_GUID;
@@ -211,7 +198,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		// check if we have XSDT
 		if (rsdp->Revision < EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION)
 		{
-			Print(L"No XSDT\n");
+			Print(L"%ENo XSDT\n");
 			rsdp = NULL;
 			goto next_table;
 		}
@@ -220,7 +207,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		Xsdt = (EFI_ACPI_SDT_HEADER*)(rsdp->XsdtAddress);
 		if (strncmp8("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
 		{
-			Print(L"Invalid XSDT\n");
+			Print(L"%EInvalid XSDT\n");
 			Xsdt = NULL;
 			goto next_table;
 		}
@@ -231,7 +218,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		UINT32 EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
 		Print(L"%HXSDT OEM ID: %s Tables: %d%N\n", OemStr, EntryCount);
 
-		// iterate XSDT tables
+		// iterate XSDT tables to search for BGRT
 		UINT64* EntryPtr;
 		CHAR16 SigStr[20];
 		EntryPtr = (UINT64*)(Xsdt + 1);
@@ -245,7 +232,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 			// See Advanced Configuration and Power Interface Specification Version 6.2
 			// Table 5-104 Boot Graphics Resource Table Fields
-			if (!strncmp8((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4))
+			if (!strncmp8((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4)) // found existing BGRT
 			{
 				// blow up the old table and replace with our brand new table
 				memcpy8((CHAR8*)*EntryPtr, (CHAR8*)"FUCK", 4);
@@ -276,15 +263,17 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		UINT32 EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
 		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
-		// debug mark
+		// debug mark; use rweverything (http://rweverything.com/) to look for it under Windows
 		memcpy8((CHAR8*)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
 
 		// re-calculate XSDT checksum
 		const CHAR8 new_xsdt_checksum_diff = AcpiChecksum((UINT8*)newXsdt, newXsdt->Header.Length);
 		newXsdt->Header.Checksum -= new_xsdt_checksum_diff;
 
-		// replace old XSDT
+		// invalidate old XSDT table signature and checksum
 		memcpy8((CHAR8*)Xsdt, (CHAR8*)"FUCK", 4);
+
+		// replace old XSDT
 		rsdp->XsdtAddress = (UINT64)newXsdt;
 
 		// re-calculate RSDP extended checksum
