@@ -14,7 +14,7 @@ Run `BGRTInjector.efi` either manually or automatically before your OS loads. Yo
 
 ### Installation on rEFInd
 
-Put a release build of `BGRTInjector.efi` (driver mode) into `ESP:\EFI\refind\drivers_%ARCH%` and reboot.
+Put a release build of `BGRTInjector.efi` (driver mode) into `ESP:\EFI\refind\drivers_x64` and reboot.
 
 ### Installation without 3rd-party bootloader
 
@@ -24,7 +24,7 @@ Put a release build of `BGRTInjector.efi` (Windows loader mode) into your ESP vo
 
 ### Customize the image
 
-To customize the image, put a 24-bit BMP image named `boot_image.bmp` into the root folder of your ESP volume (where `BGRTInjector.efi` lives).
+To customize the image, put a 24-bit BMP image named `boot_image.bmp` into the root directory of your ESP volume (where `BGRTInjector.efi` lives).
 
 ### Change the built-in default image
 
