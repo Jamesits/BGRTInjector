@@ -34,6 +34,12 @@ Convert a 24-bit BMP image to C-style array initializer, replace `default_boot_i
 python3 bin2array.py -O default_boot_image.bmp.inc your_image.bmp
 ```
 
+### Security
+
+Loading untrusted image into memory is dangerous. BGRTInjector only reads the image file from the volume (partition) it lives in, and ESP partition is usually protected under end-user accessible operating systems, so we can assume only a system administrator or [a evil maid](https://en.wikipedia.org/wiki/Evil_maid_attack) can load an evil image. Additionally BGRTInjector does some basic sanity checks on the image file, but it is still prone to specially crafted evil images. 
+
+If you are not signing your own Secure Boot keys, using BGRTInjector means Secure Boot will be unavailable.
+
 ## Building
 
 Flags:
