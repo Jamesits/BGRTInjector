@@ -22,45 +22,57 @@
     <ClCompile Include="..\..\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\listacpi.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\acpi_checksum.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\memory_management.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\gop.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pause.c">
+    <ClCompile Include="..\..\chainload.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\nstdlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\acpi_dump.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dirtool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\listacpi.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\acpi_checksum.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\bgrt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\memory_management.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\gop.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pause.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\bmp.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xsdt.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\chainload.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\file.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\nstdlib.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\acpi_dump.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dirtool.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

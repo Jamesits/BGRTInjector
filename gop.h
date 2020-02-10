@@ -4,7 +4,7 @@
 
 #include <efi.h>
 #include <efilib.h>
-#include "listacpi.h"
+#include "acpi_dump.h"
 
 EFI_STATUS
 PrintGOP(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop);

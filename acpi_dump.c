@@ -5,25 +5,8 @@
 
 #include <efi.h>
 #include <efilib.h>
-#include "listacpi.h"
-
-UINTN
-myStrnCmpA(CHAR8* s1, CHAR8* s2, UINTN len)
-{
-	while (*s1 && len)
-	{
-		if (*s1 != *s2)
-		{
-			break;
-		}
-		s1 += 1;
-		s2 += 1;
-		len -= 1;
-	}
-
-	return len ? *s1 - *s2 : 0;
-}
-
+#include "acpi_dump.h"
+#include "nstdlib.h"
 
 VOID
 Ascii2UnicodeStr(CHAR8* String, CHAR16* UniString, UINT8 length)
@@ -62,7 +45,7 @@ ParseRSDP(EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER* Rsdp, CHAR16* GuidStr)
 		return 1;
 	}
 
-	if (myStrnCmpA("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
+	if (strncmp8("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
 	{
 		Print(L"ERROR: Invalid XSDT table found.\n");
 		return 1;

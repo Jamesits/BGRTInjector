@@ -1,22 +1,35 @@
 #include <stdbool.h>
 #include <efi.h>
 #include <efilib.h>
-#include "listacpi.h"
+#include "acpi_dump.h"
 #include "bgrt.h"
 #include "acpi_checksum.h"
 #include "gop.h"
-#include "pause.h"
 #include "bmp.h"
-#include "memory_management.h"
+#include "nstdlib.h"
 #include "xsdt.h"
 #include "chainload.h"
-#include "file.h"
+#include "dirtool.h"
 
 #define LOAD_WINDOWS
 
 const char default_bootimage[] = {
 #include "default_bootimage.bmp.inc"
 };
+
+EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
+{
+#if defined(_DEBUG)
+	Print(L"ChainloadByDevicePath %s ignored in debug build\n", file->Path);
+	CHAR8* buf = dirtool_read_file(file);
+	Print(L"buf: %c%c\n", buf[0], buf[1]); // should print "MZ"
+	return EFI_SUCCESS;
+#else
+	ClearInputBuf();
+	EFI_STATUS ret = ChainloadByDevicePath(file->DevicePath, ImageHandle);
+	return ret;
+#endif
+}
 
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
@@ -30,8 +43,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	Print(L"Firmware %s Rev %d\n\n", SystemTable->FirmwareVendor, SystemTable->FirmwareRevision);
 
 	// debug area
-	PrintDevices(ImageHandle, SystemTable);
-	pause(SystemTable);
+	// PrintDevices(ImageHandle, SystemTable);
+	// ProcessFilesInDir(GetCurrentDisk(ImageHandle, gST), FileDevicePath(GetCurrentDisk(ImageHandle, gST), "\\"), PerFileFuncExample);
+	// pause();
 
 	// get screen size
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = GetGOP();
@@ -44,7 +58,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	// load image file
 	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER *)&default_bootimage;
 	// TODO: check if image is 24bit or 32bit
-	if (myStrnCmpA((CHAR8 *)"BM", (CHAR8 *)boot_image, 2))
+	if (strncmp8((CHAR8 *)"BM", (CHAR8 *)boot_image, 2))
 	{
 		Print(L"Image file format not recognized");
 		return EFI_UNSUPPORTED;
@@ -68,10 +82,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char so we are inverted
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
 	newBgrtTable->Header.Revision = 1;
-	memcpy2(newBgrtTable->Header.OemId, (CHAR8*)"YJSNPI", 6);
-	memcpy2((CHAR8*)&(newBgrtTable->Header.OemTableId), (CHAR8*)"JAMESITS", 8);
+	memcpy8(newBgrtTable->Header.OemId, (CHAR8*)"YJSNPI", 6);
+	memcpy8((CHAR8*)&(newBgrtTable->Header.OemTableId), (CHAR8*)"JAMESITS", 8);
 	newBgrtTable->Header.OemRevision = 1919;
-	memcpy2((CHAR8*)&(newBgrtTable->Header.CreatorId), (CHAR8*)"1919", 4);
+	memcpy8((CHAR8*)&(newBgrtTable->Header.CreatorId), (CHAR8*)"1919", 4);
 	newBgrtTable->Header.CreatorRevision = 1919;
 	newBgrtTable->Version = EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE_REVISION;
 	// Status: set to 0 (INVALID) and Windows loader will draw the image; set to 1(VALID) then Windows loader will retain whatever on the screen not redrawing framebuffer
@@ -84,7 +98,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
-	memcpy2((CHAR8*)newBmpImage, (CHAR8*)default_bootimage, boot_image->bfSize);
+	memcpy8((CHAR8*)newBmpImage, (CHAR8*)default_bootimage, boot_image->bfSize);
 	newBgrtTable->ImageAddress = (UINT64)newBmpImage;
 
 	// checksum
@@ -116,7 +130,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 			goto next_table;
 		}
 
-		if (myStrnCmpA((unsigned char*)"RSD PTR ", (CHAR8*)ect->VendorTable, 8))
+		if (strncmp8((unsigned char*)"RSD PTR ", (CHAR8*)ect->VendorTable, 8))
 		{
 			Print(L"Not RSDP\n");
 			goto next_table;
@@ -140,7 +154,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// validate XSDT signature
 		Xsdt = (EFI_ACPI_SDT_HEADER*)(rsdp->XsdtAddress);
-		if (myStrnCmpA("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
+		if (strncmp8("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
 		{
 			Print(L"Invalid XSDT\n");
 			Xsdt = NULL;
@@ -167,10 +181,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 			// See Advanced Configuration and Power Interface Specification Version 6.2
 			// Table 5-104 Boot Graphics Resource Table Fields
-			if (!myStrnCmpA((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4))
+			if (!strncmp8((unsigned char *)"BGRT", (CHAR8*)(Entry->Signature), 4))
 			{
 				// blow up the old table and replace with our brand new table
-				memcpy2((CHAR8*)*EntryPtr, (CHAR8*)"FUCK", 4);
+				memcpy8((CHAR8*)*EntryPtr, (CHAR8*)"FUCK", 4);
 				*EntryPtr = (UINT64)newBgrtTable;
 				patchSuccessful = true;
 				Print(L"%NBGRT table has been replaced\n");
@@ -191,7 +205,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// create new XSDT
 		XSDT* newXsdt = malloc_acpi(Xsdt->Length + sizeof(UINT64));
-		memcpy2((CHAR8*)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
+		memcpy8((CHAR8*)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
 
 		// insert entry
 		newXsdt->Header.Length += sizeof(UINT64);
@@ -199,14 +213,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
 		// debug mark
-		memcpy2((CHAR8*)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
+		memcpy8((CHAR8*)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
 
 		// re-calculate XSDT checksum
 		const CHAR8 new_xsdt_checksum_diff = AcpiChecksum((UINT8*)newXsdt, newXsdt->Header.Length);
 		newXsdt->Header.Checksum -= new_xsdt_checksum_diff;
 
 		// replace old XSDT
-		memcpy2((CHAR8*)Xsdt, (CHAR8*)"FUCK", 4);
+		memcpy8((CHAR8*)Xsdt, (CHAR8*)"FUCK", 4);
 		rsdp->XsdtAddress = (UINT64)newXsdt;
 
 		// re-calculate RSDP extended checksum
@@ -235,12 +249,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		ret = EFI_UNSUPPORTED;
 	}
 
-	pause(SystemTable);
-
 #if defined(_DEBUG)
 	Print(L"%EBGRTInjector done, press any key to continue.%N\n\n");
 
-	pause(SystemTable);
+	pause();
 
 	// If running in debug mode, use the EFI shut down call to close QEMU
 	/*Print(L"%EResetting system%N\n\n");
@@ -252,7 +264,58 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 #if defined(LOAD_WINDOWS)
 	// directly load Windows
+	Print(L"%HSearching Microsoft bootloader...\n");
+	CHAR16 PATH1[] = L"EFI\\Microsoft\\boot\\bootmgfw.efi";
+	DIRTOOL_STATE DirToolState;
+	DirToolState.initialized = 0;
+	Print(L"dirtool_init\n");
+	EFI_STATUS status = dirtool_init(&DirToolState, ImageHandle);
+	if (EFI_ERROR(status)) {
+		return status;
+	}
+
+	// first try current disk
+	DIRTOOL_DRIVE* drive;
+	drive = dirtool_get_current_drive(&DirToolState, 0);
+	dirtool_open_drive(&DirToolState, drive);
+	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), PATH1);
+	if (pwd)
+	{
+		load_efi_image(pwd, ImageHandle);
+	}
+	dirtool_close_drive(&DirToolState, drive);
+
+	if (!pwd) {
+		Print(L"%Ebootmgfw.efi not found on current ESP disk, searching all disks%N\n");
+
+#if defined(_DEBUG)
+		pause();
 #endif
+
+		// then try to search every readable disk for bootmgfw.efi
+		DIRTOOL_DRIVE_ITERATOR* iterator = dirtool_drive_iterator_start(&DirToolState);
+		while ((drive = dirtool_drive_iterator_next(&DirToolState, iterator)) != NULL)
+		{
+			Print(L"Opening drive 0x%x\n", &drive);
+			DIRTOOL_FILE* pwd = dirtool_open_drive(&DirToolState, drive);
+			if (pwd == NULL) continue;
+			pwd = dirtool_cd_multi(pwd, PATH1);
+			if (pwd)
+			{
+				load_efi_image(pwd, ImageHandle);
+			}
+#if defined(_DEBUG)
+			Print(L"before dirtool_close_drive()\n");
+			pause();
+#endif
+			dirtool_close_drive(&DirToolState, drive);
+		}
+		dirtool_drive_iterator_end(&DirToolState, iterator);
+		iterator = NULL;
+	}
+#endif
+
 
 	return ret;
 }
+

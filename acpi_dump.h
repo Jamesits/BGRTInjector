@@ -40,9 +40,6 @@ typedef struct
 
 #define EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION 0x02
 
-UINTN
-myStrnCmpA(CHAR8* s1, CHAR8* s2, UINTN len);
-
 VOID
 Ascii2UnicodeStr(CHAR8* String, CHAR16* UniString, UINT8 length);
 
