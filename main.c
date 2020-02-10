@@ -12,10 +12,11 @@
 #include "dirtool.h"
 
 #define LOAD_WINDOWS
+#define USER_BOOT_IMAGE_PATH L"boot_image.bmp"
 
 // the default image compiled into the program
 // if user-provided image is not found anywhere, use this
-const char default_bootimage[] = {
+const CHAR8 default_bootimage[] = {
 #include "default_bootimage.bmp.inc"
 };
 
@@ -33,7 +34,50 @@ EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
 #endif
 }
 
+// Search this drive for user_provided boot image, load it into the memory and return the buffer.
+// If not found, return NULL.
+// The length of a BMP file is self-contained. This is unsafe if you load image from unknown sources.
+// TODO: check buffer and image length
+CHAR8 *load_user_boot_image(CHAR16 *boot_image_path, EFI_HANDLE ImageHandle)
+{
+	CHAR8* buf = NULL;
+	DIRTOOL_STATE DirToolState;
+	DirToolState.initialized = 0;
+	// Print(L"dirtool_init\n");
+	EFI_STATUS status = dirtool_init(&DirToolState, ImageHandle);
+	if (EFI_ERROR(status)) {
+		return NULL;
+	}
 
+	// first try current disk
+	DIRTOOL_DRIVE* drive;
+	drive = dirtool_get_current_drive(&DirToolState, 0);
+	dirtool_open_drive(&DirToolState, drive);
+	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), boot_image_path);
+	if (pwd)
+	{
+		buf = dirtool_read_file(pwd);
+		Print(L"%HUser provided boot image found at %s, file_size=%u%N\n", boot_image_path, pwd->FileInfo->FileSize);
+		if (!bmp_sanity_check(buf, pwd->FileInfo->FileSize))
+		{
+			// something is wrong with the file
+			free(buf);
+			buf = NULL;
+			Print(L"%ESanity check failed, not loading%N\n");
+			pause();
+		} else
+		{
+			Print(L"%HSanity check passed%N\n");
+		}
+	}
+#if defined(_DEBUG)
+	pause();
+#endif
+	dirtool_close_drive(&DirToolState, drive);
+	dirtool_deinit(&DirToolState);
+
+	return buf;
+}
 
 // Application entrypoint (must be set to 'efi_main' for gnu-efi crt0 compatibility)
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
@@ -60,8 +104,19 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 
 	// load image file
-	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER *)&default_bootimage;
-	// TODO: check if image is 24bit or 32bit
+	bool isDefaultBootImageUsed = false;
+	BMP_IMAGE_HEADER* boot_image = load_user_boot_image(USER_BOOT_IMAGE_PATH, ImageHandle);
+	if (boot_image == NULL) {
+		boot_image = (BMP_IMAGE_HEADER*)&default_bootimage;
+		if (!bmp_sanity_check(boot_image, 0))
+		{
+			Print(L"%EDefault boot image is corrupted, please re-download BGRTInjector!%N\n");
+			return EFI_UNSUPPORTED;
+		}
+		isDefaultBootImageUsed = true;
+	}
+
+	
 	if (strncmp8((CHAR8 *)"BM", (CHAR8 *)boot_image, 2))
 	{
 		Print(L"Image file format not recognized");
@@ -102,7 +157,12 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
-	memcpy8((CHAR8*)newBmpImage, (CHAR8*)default_bootimage, boot_image->bfSize);
+	memcpy8((CHAR8*)newBmpImage, (CHAR8*)boot_image, boot_image->bfSize);
+	if (!isDefaultBootImageUsed)
+	{
+		free(boot_image);
+		boot_image = NULL;
+	}
 	newBgrtTable->ImageAddress = (UINT64)newBmpImage;
 
 	// checksum
@@ -272,7 +332,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	CHAR16 MSBootloaderPath1[] = L"EFI\\Microsoft\\boot\\bootmgfw.efi";
 	DIRTOOL_STATE DirToolState;
 	DirToolState.initialized = 0;
-	Print(L"dirtool_init\n");
+	// Print(L"dirtool_init\n");
 	EFI_STATUS status = dirtool_init(&DirToolState, ImageHandle);
 	if (EFI_ERROR(status)) {
 		return status;

@@ -180,7 +180,7 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 		Print(L"%Edirtool_cd() got NULL parameter%N\n");
 		return NULL;
 	}
-	Print(L"dirtool_cd() %s -> %s\n", pwd->Path, NewFileName);
+	// Print(L"dirtool_cd() %s -> %s\n", pwd->Path, NewFileName);
 	DIRTOOL_FILE *NewFile = malloc(sizeof(DIRTOOL_FILE));
 
 	// Print(L"FileHandle->Open()\n");
@@ -195,10 +195,10 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 	pwd->ChildFile = NewFile;
 	NewFile->Drive = pwd->Drive;
 	// reset file read position; not really needed on directories but it is in some examples
-	Print(L"FileHandle->SetPosition()\n");
+	// Print(L"FileHandle->SetPosition()\n");
 	NewFile->FileHandle->SetPosition(NewFile->FileHandle, 0);
 
-	Print(L"LibFileInfo()\n");
+	// Print(L"LibFileInfo()\n");
 	NewFile->FileInfo = LibFileInfo(NewFile->FileHandle);
 
 	// FileHandle->Read only reads directory's child files, not its own
@@ -230,7 +230,7 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 	memcpy16(NewFile->Path + lastFilePathLength + 1, NewFile->FileInfo->FileName, newFileNameLength);
 	NewFile->Path[lastFilePathLength + newFileNameLength + 1] = 0;
 
-	Print(L"FileDevicePath() %x %s\n", pwd->Drive->Handle, NewFile->Path);
+	// Print(L"FileDevicePath() %x %s\n", pwd->Drive->Handle, NewFile->Path);
 	NewFile->DevicePath = FileDevicePath(pwd->Drive->Handle, NewFile->Path);
 	if (NewFile->DevicePath == NULL) {
 		free(NewFile->FileInfo);
@@ -238,7 +238,7 @@ DIRTOOL_FILE *dirtool_cd(DIRTOOL_FILE *pwd, CHAR16 *NewFileName)
 		return NULL;
 	}
 
-	Print(L"dirtool_cd() done %s\n", NewFile->Path);
+	// Print(L"dirtool_cd() done %s\n", NewFile->Path);
 	return NewFile;
 }
 
@@ -253,15 +253,15 @@ DIRTOOL_FILE* dirtool_cd_multi(DIRTOOL_FILE* pwd, CHAR16* Path)
 
 	while(*Path != 0)
 	{
-		Print(L"dirtool_cd_multi() Path=%s, Path[0]=%u, Len=%u\n", Path, Path[0], strlen16(Path));
+		// Print(L"dirtool_cd_multi() Path=%s, Path[0]=%u, Len=%u\n", Path, Path[0], strlen16(Path));
 		while (*Path == split) ++Path;
 		UINTN i;
 		for (i = 0; Path[i] != split && Path[i] != 0; ++i) {};
-		Print(L"dirtool_cd_multi() len=%u\n", i);
+		// Print(L"dirtool_cd_multi() len=%u\n", i);
 		CHAR16* PathSegment = malloc(sizeof(CHAR16) * (i + 1));
 		memcpy16(PathSegment, Path, i);
 		PathSegment[i] = 0;
-		Print(L"dirtool_cd_multi() PathSegment=%s\n", PathSegment);
+		// Print(L"dirtool_cd_multi() PathSegment=%s\n", PathSegment);
 		ret = dirtool_cd(ret, PathSegment);
 
 		Path += i; // do not +1 since it will go over the boundary in the final round
@@ -361,7 +361,7 @@ CHAR8 *dirtool_read_file(DIRTOOL_FILE *file)
 	EFI_STATUS Status;
 	EFI_FILE_HANDLE File;
 
-	Print(L"dirtool_read_file() %s\n", file->FileInfo->FileName);
+	// Print(L"dirtool_read_file() %s\n", file->FileInfo->FileName);
 
 	// read the file into a buffer
 	Status = file->ParentFolder->FileHandle->Open(file->ParentFolder->FileHandle, &File, file->FileInfo->FileName, EFI_FILE_MODE_READ, 0);
@@ -372,13 +372,15 @@ CHAR8 *dirtool_read_file(DIRTOOL_FILE *file)
 	// reset position just in case
 	File->SetPosition(File, 0);
 
-	// TODO: Size, FileSize, PhysicalSize?
+	// Size is FileInfo structure size
+	// FileSize is the file's actual size
+	// PhysicalSize is the file's size + padding on disk
 	UINTN bufsize = file->FileInfo->FileSize;
 	CHAR8* buf = malloc(bufsize);
 
-	Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
+	// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
 	Status = File->Read(File, &bufsize, buf);
-	Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
+	// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
 
 	file->ParentFolder->FileHandle->Close(File);
 

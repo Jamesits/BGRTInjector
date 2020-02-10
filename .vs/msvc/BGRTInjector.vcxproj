@@ -388,6 +388,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\acpi_checksum.c" />
+    <ClCompile Include="..\..\bmp.c" />
     <ClCompile Include="..\..\chainload.c" />
     <ClCompile Include="..\..\dirtool.c" />
     <ClCompile Include="..\..\file.c" />

@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\dirtool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\bmp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\acpi_checksum.h">

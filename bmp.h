@@ -2,6 +2,7 @@
 #ifndef __BMP_H__
 #define __BMP_H__
 #include <efi.h>
+#include <stdbool.h>
 
 #pragma pack(1)
 typedef struct
@@ -28,4 +29,5 @@ typedef struct
 } BMP_IMAGE_HEADER;
 #pragma pack()
 
+bool bmp_sanity_check(CHAR8* buf, UINTN FileSize);
 #endif
