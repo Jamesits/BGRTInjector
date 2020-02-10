@@ -24,7 +24,9 @@ Put a release build of `BGRTInjector.efi` (Windows loader mode) into your ESP vo
 
 ### Customize the image
 
-To customize the image, put a 24-bit BMP image named `boot_image.bmp` into the root directory of your ESP volume (where `BGRTInjector.efi` lives). If BGRTInjector complains about image file size incorrect, please open the BMP image in `mspaint.exe` then save it to fix its header.
+To customize the image, put a **24-bit** (other modes and formats are not supported) BMP image named `boot_image.bmp` into the root directory of your ESP volume (where `BGRTInjector.efi` lives). If BGRTInjector complains about image file size incorrect, please open the BMP image in `mspaint.exe` then save it to fix its header.
+
+The image will be displayed on the center of the screen, 1:1 pixel aligned. If the image is larger then the default UEFI GOP resolution, it will not be disabled. 
 
 ### Change the built-in default image
 
