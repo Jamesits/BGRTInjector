@@ -132,6 +132,10 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	      offsetX, offsetY
 	);
 
+	#if defined(_DEBUG)
+		pause();
+	#endif
+
 	// craft a new BGRT table
 	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(
 		sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
@@ -347,7 +351,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 #if defined(LOAD_WINDOWS)
 	// directly load Windows
-	Print(L"%HSearching Microsoft bootloader...\n");
+	Print(L"%HSearching Microsoft bootloader...%N\n");
 	CHAR16 MSBootloaderPath1[] = L"EFI\\Microsoft\\Boot\\bootmgfw.efi";
 	DIRTOOL_STATE DirToolState;
 	DirToolState.initialized = 0;
@@ -366,7 +370,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	dirtool_close_drive(&DirToolState, drive);
 
 	if (!pwd) {
-		Print(L"%Ebootmgfw.efi not found on current ESP disk, searching all disks%N\n");
+		Print(L"%Ebootmgfw.efi not found on current ESP partition, searching all disks%N\n");
 
 #if defined(_DEBUG)
 		pause();
