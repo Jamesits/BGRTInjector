@@ -13,7 +13,7 @@
 
 // if LOAD_WINDOWS is defined, it works under Windows loader mode, i.e. chainload Windows bootloader
 // if not defined, it will quit after done everything, thus can be load as an EFI driver
-// #define LOAD_WINDOWS
+#define LOAD_WINDOWS
 
 // the path relative to ESP partition root to search for customized boot image, can have "\\" in it
 #define USER_BOOT_IMAGE_PATH L"boot_image.bmp"
@@ -345,7 +345,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 #if defined(LOAD_WINDOWS)
 	// directly load Windows
 	Print(L"%HSearching Microsoft bootloader...\n");
-	CHAR16 MSBootloaderPath1[] = L"EFI\\Microsoft\\boot\\bootmgfw.efi";
+	CHAR16 MSBootloaderPath1[] = L"EFI\\Microsoft\\Boot\\bootmgfw.efi";
 	DIRTOOL_STATE DirToolState;
 	DirToolState.initialized = 0;
 	// Print(L"dirtool_init\n");
