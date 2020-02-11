@@ -13,7 +13,7 @@
 
 // if LOAD_WINDOWS is defined, it works under Windows loader mode, i.e. chainload Windows bootloader
 // if not defined, it will quit after done everything, thus can be load as an EFI driver
-#define LOAD_WINDOWS
+// #define LOAD_WINDOWS
 
 // the path relative to ESP partition root to search for customized boot image, can have "\\" in it
 #define USER_BOOT_IMAGE_PATH L"boot_image.bmp"
@@ -102,6 +102,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 	// load image file
 	bool isDefaultBootImageUsed = false;
+	Print(L"%HLoading boot image from disk, please wait...%N\n");
 	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER*)load_user_boot_image(USER_BOOT_IMAGE_PATH, ImageHandle);
 	if (boot_image == NULL) {
 		boot_image = (BMP_IMAGE_HEADER*)&default_boot_image;
