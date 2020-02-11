@@ -58,7 +58,7 @@ The most simple solution:
 * Remove BGRTInjector from `drivers_x64` folder
 * Download a Windows loader mode BGRTInjector and put it under `ESP:\`
 * Hard code the resolution you need in rEFInd's config file
-* Tell rEFInd not to switch to text mode before loading OS
+* Either tell rEFInd not to switch to text mode before loading OS, or disable graphics mode (full screen logo display) in your BIOS
 
 Here's a rEFInd config from my computer for reference.
 
