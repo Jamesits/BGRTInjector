@@ -4,7 +4,6 @@
 #define __FADT__BGRT_H___H__
 
 #include <efi.h>
-#include <efilib.h>
 
 #pragma pack(1)
 /// edk2/blob/master/MdePkg/Include/IndustryStandard/Acpi10.h

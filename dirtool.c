@@ -42,7 +42,7 @@ EFI_STATUS dirtool_init(DIRTOOL_STATE* state, EFI_HANDLE ImageHandle)
 		state->Drives[i].available = false;
 
 		// get EFI_SIMPLE_FILE_SYSTEM_PROTOCOL
-		Status = gBS->OpenProtocol(Handles[i], &gEfiSimpleFileSystemProtocolGuid, &(state->Drives[i].FileSystem), NULL, state->ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		Status = gBS->OpenProtocol(Handles[i], &gEfiSimpleFileSystemProtocolGuid, (void**)&(state->Drives[i].FileSystem), NULL, state->ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(Status)) {
 			DEBUG((EFI_D_ERROR, "Missing EFI_SIMPLE_FILE_SYSTEM_PROTOCOL on handle.\n"));
 			continue;

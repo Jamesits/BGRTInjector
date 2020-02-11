@@ -3,7 +3,6 @@
 #define __DIRTOOL_H__
 
 #include <efi.h>
-#include <efilib.h>
 #include <stdbool.h>
 
 #define MAX_FILE_INFO_SIZE 1024

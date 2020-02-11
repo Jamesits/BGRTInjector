@@ -1,5 +1,4 @@
 ﻿#include <efi.h>
-#include <efilib.h>
 #include "acpi_checksum.h"
 
 // ACPI checksum algorithm: all the bytes in the table should sum to 0 including chksum byte
