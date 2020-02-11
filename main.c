@@ -115,6 +115,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 
 	// calculate offset for centering the image
+	// note: Microsoft docs said "We recommend that the logo is placed with its center at 38.2% from the screen's top edge."
+	// https://docs.microsoft.com/en-us/windows-hardware/drivers/bringup/boot-screen-components#oem-logo
+	// for convenience, we are just centering it.
 	INT32 offsetX_temp = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
 	INT32 offsetY_temp = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
 
