@@ -230,7 +230,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// validate XSDT signature
 		Xsdt = (EFI_ACPI_SDT_HEADER*)(rsdp->XsdtAddress);
-		if (strncmp8((CHAR8*)"XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
+		if (strncmp8((CHAR8*)"XSDT", Xsdt->Signature, 4))
 		{
 			Print(L"%EInvalid XSDT\n");
 			Xsdt = NULL;
@@ -249,7 +249,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		EntryPtr = (UINT64*)(Xsdt + 1);
 		for (UINT32 XsdtTableIndex = 0; XsdtTableIndex < EntryCount; XsdtTableIndex++, EntryPtr++)
 		{
-			EFI_ACPI_SDT_HEADER* Entry = (EFI_ACPI_SDT_HEADER*)((UINTN)(*EntryPtr));
+			EFI_ACPI_SDT_HEADER* Entry = (EFI_ACPI_SDT_HEADER*)(*EntryPtr);
 			Ascii2UnicodeStr((CHAR8*)(Entry->Signature), SigStr, 4);
 			Ascii2UnicodeStr((CHAR8*)(Entry->OemId), OemStr, 6);
 			Print(L"  ACPI table #%d/%d: %s Rev %d OEM ID: %s\n", XsdtTableIndex + 1, EntryCount, SigStr,
