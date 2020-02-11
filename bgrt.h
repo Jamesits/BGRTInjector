@@ -1,7 +1,7 @@
 ﻿// ACPI table definition from https://github.com/tianocore/edk2
 #pragma once
 #ifndef __BGRT_H__
-#define __FADT__BGRT_H___H__
+#define __BGRT_H__
 
 #include <efi.h>
 
