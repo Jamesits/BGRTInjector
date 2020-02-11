@@ -118,6 +118,8 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	INT32 offsetX_temp = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
 	INT32 offsetY_temp = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
 
+	// avoid overflow
+	// image will still not load if it is larger than the GOP display resolution
 	UINT32 offsetX = offsetX_temp > 0 ? offsetX_temp : 0;
 	UINT32 offsetY = offsetY_temp > 0 ? offsetY_temp : 0;
 
@@ -137,7 +139,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		return EFI_OUT_OF_RESOURCES;
 	}
 
-	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char hence inverted
+	newBgrtTable->Header.Signature = 'TRGB'; // "BGRT", using multibyte char hence inverted
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
 	newBgrtTable->Header.Revision = 1;
 	memcpy8(newBgrtTable->Header.OemId, (CHAR8*)"YJSNPI", 6);
