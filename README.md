@@ -43,12 +43,47 @@ Loading untrusted image into memory is dangerous. BGRTInjector only reads the im
 
 If you are not signing your own Secure Boot keys, using BGRTInjector means Secure Boot will be unavailable. In Windows loader mode, BGRTInjector does not verify the authenticity of the target bootloader. 
 
+### FAQ
+
+#### Stuck at loading boot image from disk
+
+You have too many hard disks. Delete `ESP:\EFI\refind\drivers_x64\ntfs_x64.efi` and other filesystem drivers if you don't need them. 
+
+#### Image is not centered
+
+This typically happens when you are using driver mode and your firmware does not set GOP resolution to the max available value. All the drivers are launched prior to rEFInd setting the GOP resolution, so BGRTInjector would read a smaller screen resolution.
+
+The most simple solution:
+
+* Remove BGRTInjector from `drivers_x64` folder
+* Download a Windows loader mode BGRTInjector and put it under `ESP:\`
+* Hard code the resolution you need in rEFInd's config file
+* Tell rEFInd not to switch to text mode before loading OS
+
+Here's a rEFInd config from my computer for reference.
+
+```
+# Your resolution may vary
+resolution 3840 2160
+
+menuentry "Windows 10 (BGRT Injected)" {
+    # do not switch to text mode when booting; otherwise screen resolution will still be incorrect
+    graphics on
+
+    icon \EFI\refind\icons\os_win8.png
+
+    # use BGRTInjector Windows loader mode 
+    loader \BGRTInjector.efi
+}
+```
+
 ## Building
 
 Flags:
 
 * `_DEBUG`: debug output and more pauses to see the log on the screen.
 * `LOAD_WINDOWS`: use Windows loader mode if set, otherwise use driver mode. In Windows loader mode, it will automatically search for `EFI\Microsoft\Boot\bootmgfw.efi` and start it after BGRT table has been injected. In driver mode, it quits after BGRT table has been injected.
+* `VERTICAL_ALIGN_RATIO` and `HORIZONTAL_ALIGN_RATIO`: a float number between 0 and 1 to indicate where to put the image on the screen.
 
 ### Windows
 
