@@ -15,6 +15,15 @@
 // if not defined, it will quit after done everything, thus can be load as an EFI driver
 #define LOAD_WINDOWS
 
+// the proportional position of the displayed image's center
+// for convenience, we are just placing it at the screen center
+#define VERTICAL_ALIGN_RATIO 0.5
+#define HORIZONTAL_ALIGN_RATIO 0.5
+// note: Microsoft docs said "We recommend that the logo is placed with its center at 38.2% from the screen's top edge."
+// https://docs.microsoft.com/en-us/windows-hardware/drivers/bringup/boot-screen-components#oem-logo
+// If you need this, set:
+// #define VERTICAL_ALIGN_RATIO 0.382
+
 // the path relative to ESP partition root to search for customized boot image, can have "\\" in it
 #define USER_BOOT_IMAGE_PATH L"boot_image.bmp"
 
@@ -114,17 +123,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		isDefaultBootImageUsed = true;
 	}
 
-	// calculate offset for centering the image
-	// note: Microsoft docs said "We recommend that the logo is placed with its center at 38.2% from the screen's top edge."
-	// https://docs.microsoft.com/en-us/windows-hardware/drivers/bringup/boot-screen-components#oem-logo
-	// for convenience, we are just centering it.
-	INT32 offsetX_temp = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
-	INT32 offsetY_temp = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
+	// calculate image offset
+	const INT32 offsetX_temp = (INT32)(HORIZONTAL_ALIGN_RATIO *((float)(gop->Mode->Info->HorizontalResolution) - (float)boot_image->biWidth));
+	const INT32 offsetY_temp = (INT32)(VERTICAL_ALIGN_RATIO * ((float)(gop->Mode->Info->VerticalResolution) - (float)boot_image->biHeight));
 
 	// avoid overflow
 	// image will still not load if it is larger than the GOP display resolution
-	UINT32 offsetX = offsetX_temp > 0 ? offsetX_temp : 0;
-	UINT32 offsetY = offsetY_temp > 0 ? offsetY_temp : 0;
+	const UINT32 offsetX = offsetX_temp > 0 ? offsetX_temp : 0;
+	const UINT32 offsetY = offsetY_temp > 0 ? offsetY_temp : 0;
 
 	Print(L"Screen size: %u*%u, Image size: %d*%d (%u bytes), Top left point: %u*%u\n",
 	      gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution,
