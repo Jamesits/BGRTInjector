@@ -284,7 +284,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// insert entry
 		newXsdt->Header.Length += sizeof(UINT64);
-		UINT32 EntryCount = (Xsdt->Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
+		UINT32 EntryCount = (newXsdt->Header.Length - sizeof(EFI_ACPI_SDT_HEADER)) / sizeof(UINT64);
 		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
 		// debug mark; use rweverything (http://rweverything.com/) to look for it under Windows
