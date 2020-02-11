@@ -366,7 +366,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	drive = dirtool_get_current_drive(&DirToolState, 0);
 	dirtool_open_drive(&DirToolState, drive);
 	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), MSBootloaderPath1);
-	if (pwd)load_efi_image(pwd, ImageHandle);
+	if (pwd) load_efi_image(pwd, ImageHandle);
 	dirtool_close_drive(&DirToolState, drive);
 
 	if (!pwd) {
