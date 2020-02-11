@@ -47,7 +47,7 @@ If you are not signing your own Secure Boot keys, using BGRTInjector means Secur
 
 #### Stuck at loading boot image from disk
 
-You have too many hard disks. Delete `ESP:\EFI\refind\drivers_x64\ntfs_x64.efi` and other filesystem drivers if you don't need them. 
+You have too many hard disks or [the NTFS driver comes with rEFInd is causing a hang](https://www.rodsbooks.com/refind/drivers.html#selecting). Delete `ESP:\EFI\refind\drivers_x64\ntfs_x64.efi` and other filesystem drivers if you don't need them. 
 
 #### Image is not centered
 
