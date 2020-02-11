@@ -2,7 +2,6 @@
 #include "nstdlib.h"
 
 // do basic sanity check on an BMP image
-// if FileSize == 0 then bypass file length check (useful when the file is compiled in)
 // return true if check passed
 // return false if something is wrong
 bool bmp_sanity_check(CHAR8 *buf, UINTN FileSize)
@@ -16,7 +15,7 @@ bool bmp_sanity_check(CHAR8 *buf, UINTN FileSize)
 
 	// check incorrect BMP header size to prevent buffer overflow to some extent
 	BMP_IMAGE_HEADER* bmp = (BMP_IMAGE_HEADER*)buf;
-	if (FileSize != 0 && FileSize != bmp->bfSize)
+	if (FileSize != bmp->bfSize)
 	{
 		Print(L"%HImage file size incorrect%N\n");
 		return false;

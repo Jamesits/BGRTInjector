@@ -147,7 +147,7 @@ DIRTOOL_FILE *dirtool_open_drive(DIRTOOL_STATE* state, DIRTOOL_DRIVE *drive)
 	// Print(L"EFI_DEVICE_PATH_PROTOCOL\n");
 	if (drive->RootFile.DevicePath == NULL) // first time init
 	{
-		status = gBS->OpenProtocol(drive->Handle, &gEfiDevicePathProtocolGuid, &(drive->RootFile.DevicePath), NULL, state->ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+		status = gBS->OpenProtocol(drive->Handle, &gEfiDevicePathProtocolGuid, (void**)&(drive->RootFile.DevicePath), NULL, state->ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 		if (EFI_ERROR(status)) {
 			DEBUG((EFI_D_ERROR, "Missing EFI_DEVICE_PATH_PROTOCOL on handle.\n"));
 			return NULL;
@@ -380,10 +380,16 @@ CHAR8 *dirtool_read_file(DIRTOOL_FILE *file)
 	// PhysicalSize is the file's size + padding on disk
 	UINTN bufsize = file->FileInfo->FileSize;
 	CHAR8* buf = malloc(bufsize);
-
-	// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
-	Status = File->Read(File, &bufsize, buf);
-	// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
+	if (buf)
+	{
+		// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
+		Status = File->Read(File, &bufsize, buf);
+		if (EFI_ERROR(Status)) {
+			free(buf);
+			buf = NULL;
+		}
+		// Print(L"dirtool_read_file() buf_size=%u\n", bufsize);
+	}
 
 	file->ParentFolder->FileHandle->Close(File);
 

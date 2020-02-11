@@ -43,7 +43,6 @@ EFI_STATUS load_efi_image(DIRTOOL_FILE* file, EFI_HANDLE ImageHandle)
 // Search this drive for user_provided boot image, load it into the memory and return the buffer.
 // If not found, return NULL.
 // The length of a BMP file is self-contained. This is unsafe if you load image from unknown sources.
-// TODO: check buffer and image length
 CHAR8 *load_user_boot_image(CHAR16 *boot_image_path, EFI_HANDLE ImageHandle)
 {
 	CHAR8* buf = NULL;
@@ -54,8 +53,7 @@ CHAR8 *load_user_boot_image(CHAR16 *boot_image_path, EFI_HANDLE ImageHandle)
 		return NULL;
 	}
 
-	DIRTOOL_DRIVE* drive;
-	drive = dirtool_get_current_drive(&DirToolState, 0);
+	DIRTOOL_DRIVE* drive = dirtool_get_current_drive(&DirToolState, 0);
 	dirtool_open_drive(&DirToolState, drive);
 	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), boot_image_path);
 	if (pwd)
@@ -107,7 +105,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	BMP_IMAGE_HEADER* boot_image = (BMP_IMAGE_HEADER*)load_user_boot_image(USER_BOOT_IMAGE_PATH, ImageHandle);
 	if (boot_image == NULL) {
 		boot_image = (BMP_IMAGE_HEADER*)&default_boot_image;
-		if (!bmp_sanity_check((CHAR8*)boot_image, 0))
+		if (!bmp_sanity_check((CHAR8*)boot_image, sizeof(default_boot_image)))
 		{
 			Print(L"%EDefault boot image is corrupted, please re-download BGRTInjector!%N\n");
 			return EFI_UNSUPPORTED;
@@ -116,8 +114,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	}
 
 	// calculate offset for centering the image
-	UINT32 offsetX = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
-	UINT32 offsetY = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
+	INT32 offsetX_temp = (gop->Mode->Info->HorizontalResolution - boot_image->biWidth) / 2;
+	INT32 offsetY_temp = (gop->Mode->Info->VerticalResolution - boot_image->biHeight) / 2;
+
+	UINT32 offsetX = offsetX_temp > 0 ? offsetX_temp : 0;
+	UINT32 offsetY = offsetY_temp > 0 ? offsetY_temp : 0;
 
 	Print(L"Screen size: %u*%u, Image size: %d*%d (%u bytes), Top left point: %u*%u\n",
 	      gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution,
@@ -126,9 +127,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	);
 
 	// craft a new BGRT table
-	// TODO: check if malloc() succeeds
 	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(
 		sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
+	if (newBgrtTable == NULL)
+	{
+		Print(L"%EBGRT table memory allocation failed%N\n");
+		free(boot_image);
+		return EFI_OUT_OF_RESOURCES;
+	}
 
 	newBgrtTable->Header.Signature = 'TRGB'; // using multibyte char hence inverted
 	newBgrtTable->Header.Length = sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE);
@@ -149,9 +155,14 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	newBgrtTable->ImageOffsetX = offsetX;
 	newBgrtTable->ImageOffsetY = offsetY;
 
-
-	// TODO: check if malloc() succeeds
 	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
+	if (newBmpImage == NULL)
+	{
+		Print(L"%EImage memory allocation failed%N\n");
+		free(boot_image);
+		free(newBgrtTable);
+		return EFI_OUT_OF_RESOURCES;
+	}
 	memcpy8((CHAR8*)newBmpImage, (CHAR8*)boot_image, boot_image->bfSize);
 	if (!isDefaultBootImageUsed) // image file loaded, we need to free it
 	{
@@ -174,7 +185,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	UINT64 ret = EFI_SUCCESS;
 
 	// locate RSDP (Root System Description Pointer) 
-	for (int SystemTableIndex = 0; SystemTableIndex < SystemTable->NumberOfTableEntries; SystemTableIndex++)
+	for (UINTN SystemTableIndex = 0; SystemTableIndex < SystemTable->NumberOfTableEntries; SystemTableIndex++)
 	{
 		Print(L"Table #%d/%d: ", SystemTableIndex + 1, SystemTable->NumberOfTableEntries);
 
@@ -209,7 +220,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// validate XSDT signature
 		Xsdt = (EFI_ACPI_SDT_HEADER*)(rsdp->XsdtAddress);
-		if (strncmp8("XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
+		if (strncmp8((CHAR8*)"XSDT", (CHAR8*)(VOID*)(Xsdt->Signature), 4))
 		{
 			Print(L"%EInvalid XSDT\n");
 			Xsdt = NULL;
@@ -242,7 +253,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 				memcpy8((CHAR8*)*EntryPtr, (CHAR8*)"FUCK", 4);
 				*EntryPtr = (UINT64)newBgrtTable;
 				patchSuccessful = true;
-				Print(L"%NBGRT table has been replaced\n");
+				Print(L"%HBGRT table has been replaced%N\n");
 				break;
 			}
 		}
@@ -260,6 +271,15 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 
 		// create new XSDT
 		XSDT* newXsdt = malloc_acpi(Xsdt->Length + sizeof(UINT64));
+		if (newXsdt == NULL)
+		{
+			Print(L"%EXSDT table memory allocation failed%N\n");
+			free(boot_image);
+			free(newBgrtTable);
+			return EFI_OUT_OF_RESOURCES;
+		}
+
+		// copy over old entries
 		memcpy8((CHAR8*)newXsdt, (CHAR8*)Xsdt, Xsdt->Length);
 
 		// insert entry
@@ -268,7 +288,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		newXsdt->Entry[EntryCount - 1] = (UINT64)newBgrtTable;
 
 		// debug mark; use rweverything (http://rweverything.com/) to look for it under Windows
-		memcpy8((CHAR8*)&(newXsdt->Header.CreatorId), "YJSNPI", 6);
+		memcpy8((CHAR8*)&(newXsdt->Header.CreatorId), (CHAR8*)"YJSNPI", 6);
 
 		// re-calculate XSDT checksum
 		const CHAR8 new_xsdt_checksum_diff = AcpiChecksum((UINT8*)newXsdt, newXsdt->Header.Length);
