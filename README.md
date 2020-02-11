@@ -7,6 +7,7 @@ This is a remake of [Ben Wang](https://github.com/imbushuo)'s [`windows_custom_l
 ## Requirements
 
 * UEFI firmware (some old EFI firmwares might be supported as well)
+* An operating system that reads BGRT table (reads: Windows 8.1 or later)
 
 ## Installation
 
