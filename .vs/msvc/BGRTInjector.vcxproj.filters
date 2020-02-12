@@ -22,54 +22,54 @@
     <ClCompile Include="..\..\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\acpi_checksum.c">
+    <ClCompile Include="..\..\effy\src\acpi_dump.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gop.c">
+    <ClCompile Include="..\..\effy\src\bmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\chainload.c">
+    <ClCompile Include="..\..\effy\src\chainload.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\nstdlib.c">
+    <ClCompile Include="..\..\effy\src\dirtool.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\acpi_dump.c">
+    <ClCompile Include="..\..\effy\src\gop.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dirtool.c">
+    <ClCompile Include="..\..\effy\src\nstdlib.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\bmp.c">
+    <ClCompile Include="..\..\effy\src\acpi_checksum.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\acpi_checksum.h">
+    <ClInclude Include="..\..\effy\src\acpi_checksum.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\bgrt.h">
+    <ClInclude Include="..\..\effy\src\acpi_dump.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\gop.h">
+    <ClInclude Include="..\..\effy\src\bgrt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\bmp.h">
+    <ClInclude Include="..\..\effy\src\bmp.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xsdt.h">
+    <ClInclude Include="..\..\effy\src\chainload.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\chainload.h">
+    <ClInclude Include="..\..\effy\src\dirtool.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\nstdlib.h">
+    <ClInclude Include="..\..\effy\src\gop.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\acpi_dump.h">
+    <ClInclude Include="..\..\effy\src\nstdlib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\dirtool.h">
+    <ClInclude Include="..\..\effy\src\xsdt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

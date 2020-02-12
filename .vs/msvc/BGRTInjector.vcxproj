@@ -387,28 +387,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\acpi_checksum.c" />
-    <ClCompile Include="..\..\bmp.c" />
-    <ClCompile Include="..\..\chainload.c" />
-    <ClCompile Include="..\..\dirtool.c" />
-    <ClCompile Include="..\..\gop.c" />
-    <ClCompile Include="..\..\acpi_dump.c" />
+    <ClCompile Include="..\..\effy\src\acpi_checksum.c" />
+    <ClCompile Include="..\..\effy\src\acpi_dump.c" />
+    <ClCompile Include="..\..\effy\src\bmp.c" />
+    <ClCompile Include="..\..\effy\src\chainload.c" />
+    <ClCompile Include="..\..\effy\src\dirtool.c" />
+    <ClCompile Include="..\..\effy\src\gop.c" />
+    <ClCompile Include="..\..\effy\src\nstdlib.c" />
     <ClCompile Include="..\..\main.c" />
-    <ClCompile Include="..\..\nstdlib.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\debug.vbs" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\acpi_checksum.h" />
-    <ClInclude Include="..\..\bgrt.h" />
-    <ClInclude Include="..\..\bmp.h" />
-    <ClInclude Include="..\..\chainload.h" />
-    <ClInclude Include="..\..\dirtool.h" />
-    <ClInclude Include="..\..\gop.h" />
-    <ClInclude Include="..\..\acpi_dump.h" />
-    <ClInclude Include="..\..\nstdlib.h" />
-    <ClInclude Include="..\..\xsdt.h" />
+    <ClInclude Include="..\..\effy\src\acpi_checksum.h" />
+    <ClInclude Include="..\..\effy\src\acpi_dump.h" />
+    <ClInclude Include="..\..\effy\src\bgrt.h" />
+    <ClInclude Include="..\..\effy\src\bmp.h" />
+    <ClInclude Include="..\..\effy\src\chainload.h" />
+    <ClInclude Include="..\..\effy\src\dirtool.h" />
+    <ClInclude Include="..\..\effy\src\gop.h" />
+    <ClInclude Include="..\..\effy\src\nstdlib.h" />
+    <ClInclude Include="..\..\effy\src\xsdt.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

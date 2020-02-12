@@ -1,15 +1,15 @@
 #include <stdbool.h>
 #include <efi.h>
 #include <efilib.h>
-#include "acpi_dump.h"
-#include "bgrt.h"
-#include "acpi_checksum.h"
-#include "gop.h"
-#include "bmp.h"
-#include "nstdlib.h"
-#include "xsdt.h"
-#include "chainload.h"
-#include "dirtool.h"
+#include "effy/src/acpi_dump.h"
+#include "effy/src/bgrt.h"
+#include "effy/src/acpi_checksum.h"
+#include "effy/src/gop.h"
+#include "effy/src/bmp.h"
+#include "effy/src/nstdlib.h"
+#include "effy/src/xsdt.h"
+#include "effy/src/chainload.h"
+#include "effy/src/dirtool.h"
 
 // if LOAD_WINDOWS is defined, it works under Windows loader mode, i.e. chainload Windows bootloader
 // if not defined, it will quit after done everything, thus can be load as an EFI driver
