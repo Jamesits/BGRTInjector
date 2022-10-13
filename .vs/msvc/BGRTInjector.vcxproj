@@ -295,7 +295,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
       <EntryPointSymbol>efi_main</EntryPointSymbol>
-      <SubSystem>EFI Application</SubSystem>
+      <SubSystem>EFI Boot Service Driver</SubSystem>
       <AdditionalDependencies>gnu-efi.lib;libcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OptimizeReferences>true</OptimizeReferences>

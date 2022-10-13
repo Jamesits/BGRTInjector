@@ -3,7 +3,7 @@ ARCH            = x64
 # 10 = EFI application
 # 11 = EFI boot service driver
 # 12 = EFI runtime driver
-SUBSYSTEM       = 10
+SUBSYSTEM       = 11
 
 # Try to auto-detect the target ARCH
 ifeq ($(shell uname -o),Msys)
