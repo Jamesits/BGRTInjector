@@ -99,6 +99,9 @@ else
   QEMU          = qemu-system-$(QEMU_ARCH) -nographic
 endif
 
+SOURCES := $(wildcard *.c) $(wildcard effy/src/*.c)
+OBJECTS = $(patsubst %.c, %.o, $(SOURCES))
+
 CC             := $(CROSS_COMPILE)gcc
 OBJCOPY        := $(CROSS_COMPILE)objcopy
 CFLAGS         += -fno-stack-protector -Wshadow -Wall -Wunused -Werror-implicit-function-declaration
@@ -115,6 +118,8 @@ endif
 GCCVERSION     := $(shell $(CC) -dumpversion | cut -f1 -d.)
 GCCMINOR       := $(shell $(CC) -dumpversion | cut -f2 -d.)
 GCCMACHINE     := $(shell $(CC) -dumpmachine)
+
+# Note: Doesn't work on mingw-w64 packaged by Kali Linux
 GCCNEWENOUGH   := $(shell ( [ $(GCCVERSION) -gt "4" ]        \
                           || ( [ $(GCCVERSION) -eq "4" ]     \
                               && [ $(GCCMINOR) -ge "7" ] ) ) \
@@ -133,12 +138,12 @@ all: $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a main.efi
 $(GNUEFI_DIR)/$(GNUEFI_ARCH)/lib/libefi.a:
 	$(MAKE) -C$(GNUEFI_DIR) CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(GNUEFI_ARCH) $(GNUEFI_LIBS)
 
-%.efi: %.o
+%.efi: $(OBJECTS)
 	@echo  [LD]  $(notdir $@)
 ifeq ($(CRT0_LIBS),)
-	@$(CC) $(LDFLAGS) $< -o $@ $(LIBS)
+	@$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
 else
-	@$(CC) $(LDFLAGS) $< -o $*.elf $(LIBS)
+	@$(CC) $(LDFLAGS) $^ -o $*.elf $(LIBS)
 	@$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel* \
 	            -j .rela* -j .reloc -j .eh_frame -O binary $*.elf $@
 	@rm -f $*.elf
@@ -146,7 +151,7 @@ endif
 
 %.o: %.c
 	@echo  [CC]  $(notdir $@)
-	@$(CC) $(CFLAGS) -ffreestanding -c $<
+	@$(CC) $(CFLAGS) -ffreestanding -o $(patsubst %.c, %.o, $<) -c $<
 
 qemu: CFLAGS += -D_DEBUG
 qemu: all $(FW_BASE)_$(FW_ARCH).fd image/efi/boot/boot$(ARCH).efi
@@ -163,7 +168,7 @@ $(FW_BASE)_$(FW_ARCH).fd:
 	rm $(FW_ZIP)
 
 clean:
-	rm -f main.efi *.o
+	rm -f main.efi $(OBJECTS) *.o
 	rm -rf image
 
 superclean: clean
