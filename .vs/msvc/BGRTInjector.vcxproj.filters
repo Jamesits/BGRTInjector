@@ -17,6 +17,9 @@
     <None Include="..\..\debug.vbs">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\default_boot_image.bmp.inc">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\main.c">

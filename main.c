@@ -67,7 +67,7 @@ CHAR8 *load_user_boot_image(CHAR16 *boot_image_path, EFI_HANDLE ImageHandle)
 	DIRTOOL_FILE* pwd = dirtool_cd_multi(&(drive->RootFile), boot_image_path);
 	if (pwd)
 	{
-		buf = dirtool_read_file(pwd);
+		buf = dirtool_read_file(EfiBootServicesData, pwd);
 		Print(L"%HUser provided boot image found at %s, file_size=%u%N\n", boot_image_path, pwd->FileInfo->FileSize);
 		if (!bmp_sanity_check(buf, pwd->FileInfo->FileSize))
 		{
@@ -143,7 +143,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	#endif
 
 	// craft a new BGRT table
-	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc_acpi(
+	EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE* newBgrtTable = malloc(EfiACPIReclaimMemory,
 		sizeof(EFI_ACPI_5_0_BOOT_GRAPHICS_RESOURCE_TABLE));
 	if (newBgrtTable == NULL)
 	{
@@ -171,7 +171,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 	newBgrtTable->ImageOffsetX = offsetX;
 	newBgrtTable->ImageOffsetY = offsetY;
 
-	BMP_IMAGE_HEADER* newBmpImage = malloc_acpi(boot_image->bfSize);
+	BMP_IMAGE_HEADER* newBmpImage = malloc(EfiBootServicesData, boot_image->bfSize);
 	if (newBmpImage == NULL)
 	{
 		Print(L"%EImage memory allocation failed%N\n");
@@ -286,7 +286,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 		// if we found the XSDT but there is no BGRT
 
 		// create new XSDT
-		XSDT* newXsdt = malloc_acpi(Xsdt->Length + sizeof(UINT64));
+		XSDT* newXsdt = malloc(EfiACPIReclaimMemory, Xsdt->Length + sizeof(UINT64));
 		if (newXsdt == NULL)
 		{
 			Print(L"%EXSDT table memory allocation failed%N\n");
@@ -404,4 +404,3 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE* SystemTable)
 #endif
 	return ret;
 }
-

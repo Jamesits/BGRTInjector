@@ -398,6 +398,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\debug.vbs" />
+    <None Include="..\..\default_boot_image.bmp.inc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\effy\src\acpi_checksum.h" />
