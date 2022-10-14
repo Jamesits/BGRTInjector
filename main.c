@@ -13,7 +13,7 @@
 
 // if LOAD_WINDOWS is defined, it works under Windows loader mode, i.e. chainload Windows bootloader
 // if not defined, it will quit after done everything, thus can be load as an EFI driver
-#define LOAD_WINDOWS
+// #define LOAD_WINDOWS
 
 // the proportional position of the displayed image's center
 // for convenience, we are just placing it at the screen center

@@ -85,14 +85,21 @@ Flags:
 * `LOAD_WINDOWS`: use Windows loader mode if set, otherwise use driver mode. In Windows loader mode, it will automatically search for `EFI\Microsoft\Boot\bootmgfw.efi` and start it after BGRT table has been injected. In driver mode, it quits after BGRT table has been injected.
 * `VERTICAL_ALIGN_RATIO` and `HORIZONTAL_ALIGN_RATIO`: a float number between 0 and 1 to indicate where to put the image on the screen.
 
+Notes:
+* In theory it supports common CPU architectures, but non-amd64 ones have not been tested; contributions are welcomed
+
 ### Windows
 
 Requirements:
 
-* Visual Studio 2017 or higher
+* Visual Studio 2022 or higher
 * C++ desktop development tools
 * MSVC C++ build tools (for architectures you need)
 * MSVC C++ Spectre-mitigated libs (for architectures you need)
 * QEMU
 
 Open `BGRTInjector.sln` in Visual Studio and click Build Solution. 
+
+### Linux
+
+Install `mingw-w64` plus the usual C/C++ development packages, then run `make`. Linux build procedures are not extensively tested, so your mileage may vary.
